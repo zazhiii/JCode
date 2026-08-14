@@ -14,6 +14,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static jdk.internal.util.OperatingSystem.isWindows;
+
 public class Main {
     private static final int MAX_ATTEMPTS = 5;
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(60);
@@ -31,6 +33,9 @@ public class Main {
     private static final String ANSI_RESET = "\033[0m";
 
     private static final Config CONFIG = new Config();
+
+    private static final String SHELL_NAME =
+            isWindows() ? "Windows cmd" : "bash";
 
 
     public static void main(String[] args) throws IOException, InterruptedException {
