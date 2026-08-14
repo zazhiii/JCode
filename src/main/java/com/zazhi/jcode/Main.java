@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static jdk.internal.util.OperatingSystem.isWindows;
+//import static jdk.internal.util.OperatingSystem.isWindows;
 
 public class Main {
     private static final int MAX_ATTEMPTS = 5;
@@ -34,8 +34,10 @@ public class Main {
 
     private static final Config CONFIG = new Config();
 
-    private static final String SHELL_NAME =
-            isWindows() ? "Windows cmd" : "bash";
+//    private static final String SHELL_NAME =
+//            isWindows() ? "Windows cmd" : "bash";
+
+    private static final String SHELL_NAME = "Windows cmd";
 
 
     public static void main(String[] args) throws IOException, InterruptedException {
