@@ -50,6 +50,8 @@ public class App extends Application {
                 throw new RuntimeException(ex);
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
             }
 //            messages.add("agent: " + resp);
 
