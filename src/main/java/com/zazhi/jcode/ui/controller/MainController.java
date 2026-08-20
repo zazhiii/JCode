@@ -37,6 +37,16 @@ public class MainController {
 
     @FXML
     private void initialize() {
+        // 测试
+        messages.add(new ChatMessage(
+                MessageRole.USER,
+                "你好"
+        ));
+        messages.add(new ChatMessage(
+                MessageRole.ASSISTANT,
+                "你好，我是JCode AI助手，请问有什么可以帮你？"
+        ));
+
         chatListView.setItems(messages);
         chatListView.setCellFactory(listView -> new ChatMessageCell());
 

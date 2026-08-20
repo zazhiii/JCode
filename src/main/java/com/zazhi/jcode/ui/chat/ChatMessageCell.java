@@ -52,7 +52,7 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private final HBox wrapper = new HBox();
     private final VBox bubble = new VBox(6);
-    private final Label roleLabel = new Label();
+//    private final Label roleLabel = new Label();
     private final Label contentLabel = new Label();
     private final Button copyButton = new Button("复制");
 
@@ -68,13 +68,16 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
         wrapper.setMaxWidth(Double.MAX_VALUE);
         wrapper.setPadding(Insets.EMPTY);
         wrapper.prefWidthProperty().bind(widthProperty().subtract(24));
+        // 鼠标移入显示复制按钮，移出隐藏
+        wrapper.setOnMouseEntered(event -> copyButton.setVisible(true));
+        wrapper.setOnMouseExited(event -> copyButton.setVisible(false));
 
         bubble.setFillWidth(true);
         bubble.maxWidthProperty().bind(
                 widthProperty().multiply(MAX_BUBBLE_WIDTH_RATIO)
         );
 
-        roleLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+//        roleLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
 
         contentLabel.setWrapText(true);
         contentLabel.setMinWidth(0);
@@ -88,11 +91,13 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
                 -fx-cursor: hand;
                 """);
         copyButton.setOnAction(event -> copyCurrentMessage());
+        copyButton.setVisible(false);
 
         HBox actions = new HBox(copyButton);
         actions.setAlignment(Pos.CENTER_RIGHT);
 
-        bubble.getChildren().setAll(roleLabel, contentLabel, actions);
+//        bubble.getChildren().setAll(roleLabel, contentLabel, actions);
+        bubble.getChildren().setAll(contentLabel, actions);
         wrapper.getChildren().setAll(bubble);
     }
 
@@ -182,8 +187,8 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
         bubble.setAlignment(bubbleAlignment);
         bubble.setStyle(bubbleStyle);
 
-        roleLabel.setText(roleText);
-        roleLabel.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
+//        roleLabel.setText(roleText);
+//        roleLabel.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
         contentLabel.setTextFill(javafx.scene.paint.Color.web(contentColor));
         copyButton.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
     }
@@ -201,7 +206,7 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private void clearCell() {
         contentLabel.setText("");
-        roleLabel.setText("");
+//        roleLabel.setText("");
         setText(null);
         setGraphic(null);
     }
