@@ -62,22 +62,23 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private void initialiseView() {
         setText(null);
-        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+//        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
         setStyle("-fx-background-color: transparent; -fx-padding: 4 10 4 10;");
 
         wrapper.setMaxWidth(Double.MAX_VALUE);
         wrapper.setPadding(Insets.EMPTY);
+        // 容器的期望宽度绑定到单元格的宽度减去24
         wrapper.prefWidthProperty().bind(widthProperty().subtract(24));
         // 鼠标移入显示复制按钮，移出隐藏
         wrapper.setOnMouseEntered(event -> copyButton.setVisible(true));
         wrapper.setOnMouseExited(event -> copyButton.setVisible(false));
 
         bubble.setFillWidth(true);
+        // 气泡宽度最多占75%的单元格宽度
         bubble.maxWidthProperty().bind(
                 widthProperty().multiply(MAX_BUBBLE_WIDTH_RATIO)
         );
 
-//        roleLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
 
         contentLabel.setWrapText(true);
         contentLabel.setMinWidth(0);
@@ -96,7 +97,6 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
         HBox actions = new HBox(copyButton);
         actions.setAlignment(Pos.CENTER_RIGHT);
 
-//        bubble.getChildren().setAll(roleLabel, contentLabel, actions);
         bubble.getChildren().setAll(contentLabel, actions);
         wrapper.getChildren().setAll(bubble);
     }
