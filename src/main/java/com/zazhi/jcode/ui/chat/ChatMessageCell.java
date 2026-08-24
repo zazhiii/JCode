@@ -69,15 +69,16 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
         wrapper.setPadding(Insets.EMPTY);
         // 容器的期望宽度绑定到单元格的宽度减去24
         wrapper.prefWidthProperty().bind(widthProperty().subtract(24));
-        // 鼠标移入显示复制按钮，移出隐藏
-        wrapper.setOnMouseEntered(event -> copyButton.setVisible(true));
-        wrapper.setOnMouseExited(event -> copyButton.setVisible(false));
+
 
         bubble.setFillWidth(true);
         // 气泡宽度最多占75%的单元格宽度
         bubble.maxWidthProperty().bind(
                 widthProperty().multiply(MAX_BUBBLE_WIDTH_RATIO)
         );
+        // 鼠标移入显示复制按钮，移出隐藏
+        bubble.setOnMouseEntered(event -> copyButton.setVisible(true));
+        bubble.setOnMouseExited(event -> copyButton.setVisible(false));
 
 
         contentLabel.setWrapText(true);

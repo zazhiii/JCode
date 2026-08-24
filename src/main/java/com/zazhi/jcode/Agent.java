@@ -6,6 +6,10 @@ import com.anthropic.core.JsonField;
 import com.anthropic.core.JsonValue;
 import com.anthropic.models.messages.*;
 import com.zazhi.jcode.tools.PowerShellExecutor;
+import com.zazhi.jcode.tools.ToolDefinitions;
+import com.zazhi.jcode.tools.ToolDispatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,11 +23,14 @@ import java.util.Map;
  */
 public class Agent {
     List<MessageParam> history = new ArrayList<>();
-    private static final int MAX_TOKENS = 1024;
+    private static final int MAX_TOKENS = 8000;
 
 //    private static final Path WORKING_DIRECTORY = Path.of("")
 //            .toAbsolutePath()
 //            .normalize();
+
+        private static final Logger log =
+            LoggerFactory.getLogger(Agent.class);
 
     private static final Config CONFIG = new Config();
     private static final AnthropicClient CLIENT = AnthropicOkHttpClient.builder()
@@ -58,21 +65,22 @@ public class Agent {
             )
             .build();
 
-    private static final List<ToolUnion> TOOLS = List.of(
-            ToolUnion.ofTool(POWERSHELL_TOOL)
-    );
+    private static final List<ToolUnion> TOOLS = ToolDefinitions.ALL;
 
-    public String query(String q) throws Exception {
+    public String query(String q) {
         history.add(
                 MessageParam.builder()
                         .role(MessageParam.Role.USER)
                         .content(q)
                         .build()
         );
+        log.info("User query: {}", q);
         agentLoop(history);
         MessageParam last = history.getLast();
         // 从MessageParam中提取文本内容
-        return extractText(last);
+        String resp = extractText(last);
+        log.info("Agent response: {}", resp);
+        return resp;
     }
 
 
@@ -111,53 +119,20 @@ public class Agent {
                     .forEach(contentBlock -> {
                         ToolUseBlock toolUseBlock = contentBlock.asToolUse();
 
-                        String output;
-                        boolean isError = false;
+                        log.info("Executing tool: {} with input: {}", toolUseBlock.name(), toolUseBlock._input());
+                        ToolDispatcher.ToolExecution execute = ToolDispatcher.execute(toolUseBlock);
 
-                        if (!"powershell".equals(toolUseBlock.name())) {
-                            output = "Error: Unknown tool: " + toolUseBlock.name();
-                            isError = true;
-                        } else {
-                            try {
-                                PowerShellInput input = toolUseBlock._input()
-                                        .convert(PowerShellInput.class);
+                        String output = execute.output();
+                        boolean isError = execute.error();
 
-                                String command = input.command();
+                        ToolResultBlockParam toolResult =
+                                ToolResultBlockParam.builder()
+                                        .toolUseId(toolUseBlock.id())
+                                        .content(output)
+                                        .isError(isError)
+                                        .build();
 
-                                // 黄色打印命令
-                                System.out.printf(
-                                        "\u001B[33m$ %s\u001B[0m%n",
-                                        command
-                                );
-
-                                output = PowerShellExecutor.runPowerShell(command);
-
-                                // 只在控制台显示前 200 个字符
-                                System.out.println(
-                                        output.substring(
-                                                0,
-                                                Math.min(200, output.length())
-                                        )
-                                );
-
-                                isError = output.startsWith("Error:");
-
-                            } catch (RuntimeException e) {
-                                output = "Error: Invalid tool input: " + e.getMessage();
-                                isError = true;
-                            }
-                            ToolResultBlockParam toolResult =
-                                    ToolResultBlockParam.builder()
-                                            .toolUseId(toolUseBlock.id())
-                                            .content(output)
-                                            .isError(isError)
-                                            .build();
-
-                            results.add(
-                                    ContentBlockParam.ofToolResult(toolResult)
-                            );
-
-                        }
+                        results.add(ContentBlockParam.ofToolResult(toolResult));
                     });
 
             // 将工具结果添加到消息中，loop继续
