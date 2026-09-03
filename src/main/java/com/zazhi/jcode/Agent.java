@@ -2,12 +2,10 @@ package com.zazhi.jcode;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
-import com.anthropic.core.JsonField;
 import com.anthropic.core.JsonValue;
 import com.anthropic.models.messages.*;
 import com.zazhi.jcode.tools.PowerShellExecutor;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,18 +18,6 @@ import java.util.Map;
 public class Agent {
     List<MessageParam> history = new ArrayList<>();
     private static final int MAX_TOKENS = 1024;
-
-//    private static final Path WORKING_DIRECTORY = Path.of("")
-//            .toAbsolutePath()
-//            .normalize();
-
-    private static final Config CONFIG = new Config();
-    private static final AnthropicClient CLIENT = AnthropicOkHttpClient.builder()
-            .apiKey(CONFIG.getApiKey())
-            .baseUrl(stripTrailingSlash(CONFIG.getBaseUrl()))
-            .build();
-
-    private static final String SHELL_NAME = "Windows cmd";
 
     private static final String SYSTEM = """
             You are a Java coding agent at %s. Use PowerShell to solve tasks. Act, don't explain."""
@@ -63,24 +49,37 @@ public class Agent {
     );
 
     public String query(String q) throws Exception {
+        Config config = Config.load();
+        config.requireApiKey();
+        AnthropicClient client = createClient(config);
+
         history.add(
                 MessageParam.builder()
                         .role(MessageParam.Role.USER)
                         .content(q)
                         .build()
         );
-        agentLoop(history);
+        agentLoop(client, config, history);
         MessageParam last = history.getLast();
-        // 从MessageParam中提取文本内容
         return extractText(last);
     }
 
+    private AnthropicClient createClient(Config config) {
+        return AnthropicOkHttpClient.builder()
+                .apiKey(config.getApiKey())
+                .baseUrl(stripTrailingSlash(config.getBaseUrl()))
+                .build();
+    }
 
-    private void agentLoop(List<MessageParam> messages) {
+    private void agentLoop(
+            AnthropicClient client,
+            Config config,
+            List<MessageParam> messages
+    ) {
         while (true) {
-            Message response = CLIENT.messages().create(
+            Message response = client.messages().create(
                     MessageCreateParams.builder()
-                            .model(CONFIG.getModelId())
+                            .model(config.getModelId())
                             .system(SYSTEM)
                             .messages(messages)
                             .tools(TOOLS)
@@ -171,6 +170,9 @@ public class Agent {
     }
 
     private static String stripTrailingSlash(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
         return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
