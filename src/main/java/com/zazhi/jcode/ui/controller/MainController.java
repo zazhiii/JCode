@@ -4,12 +4,14 @@ import com.zazhi.jcode.Agent;
 import com.zazhi.jcode.ui.chat.ChatMessageCell;
 import com.zazhi.jcode.ui.enums.MessageRole;
 import com.zazhi.jcode.ui.records.ChatMessage;
+import com.zazhi.jcode.ui.settings.LlmSettingsDialog;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
 
 import java.util.concurrent.CompletableFuture;
@@ -30,21 +32,19 @@ public class MainController {
     @FXML
     private Button sendButton;
 
+    @FXML
+    private MenuItem llmSettingsMenuItem;
+
     private final ExecutorService agentExecutor =
-        Executors.newSingleThreadExecutor();
+            Executors.newSingleThreadExecutor();
 
     private final Agent agent = new Agent();
 
     @FXML
     private void initialize() {
-        // 测试
-        messages.add(new ChatMessage(
-                MessageRole.USER,
-                "你好"
-        ));
         messages.add(new ChatMessage(
                 MessageRole.ASSISTANT,
-                "你好，我是JCode AI助手，请问有什么可以帮你？"
+                "你好，我是 **JCode** AI 助手。有什么可以帮你的吗？"
         ));
 
         chatListView.setItems(messages);
@@ -52,45 +52,51 @@ public class MainController {
 
         sendButton.setOnAction(event -> sendMessage());
         inputTextField.setOnAction(event -> sendMessage());
+        llmSettingsMenuItem.setOnAction(event ->
+                LlmSettingsDialog.show(sendButton.getScene().getWindow())
+        );
     }
 
     private void sendMessage() {
-    String input = inputTextField.getText().trim();
+        String input = inputTextField.getText().trim();
 
-    if (input.isEmpty()) {
-        return;
+        if (input.isEmpty()) {
+            return;
+        }
+
+        messages.add(new ChatMessage(MessageRole.USER, input));
+        inputTextField.clear();
+
+        CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return agent.query(input);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, agentExecutor)
+                .whenComplete((response, error) ->
+                        Platform.runLater(() -> {
+                            if (error != null) {
+                                Throwable root = error;
+                                while (root.getCause() != null) {
+                                    root = root.getCause();
+                                }
+                                messages.add(new ChatMessage(
+                                        MessageRole.ERROR,
+                                        root.getMessage() == null
+                                                ? error.getMessage()
+                                                : root.getMessage()
+                                ));
+                            } else {
+                                messages.add(new ChatMessage(
+                                        MessageRole.ASSISTANT,
+                                        response
+                                ));
+                            }
+
+                            chatListView.scrollTo(messages.size() - 1);
+                        })
+                );
     }
-
-    messages.add(new ChatMessage(MessageRole.USER, input));
-    inputTextField.clear();
-//    setRunning(true);
-
-    CompletableFuture
-            .supplyAsync(() -> {
-                try {
-                    return agent.query(input);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, agentExecutor)
-            .whenComplete((response, error) ->
-                    Platform.runLater(() -> {
-                        if (error != null) {
-                            messages.add(new ChatMessage(
-                                    MessageRole.ERROR,
-                                    error.getMessage()
-                            ));
-                        } else {
-                            messages.add(new ChatMessage(
-                                    MessageRole.ASSISTANT,
-                                    (String) response
-                            ));
-                        }
-
-//                        setRunning(false);
-                        chatListView.scrollTo(messages.size() - 1);
-                    })
-            );
-}
-
 }

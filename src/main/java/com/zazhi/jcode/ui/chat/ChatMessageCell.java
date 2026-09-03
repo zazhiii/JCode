@@ -1,18 +1,18 @@
 package com.zazhi.jcode.ui.chat;
 
 import com.zazhi.jcode.ui.enums.MessageRole;
+import com.zazhi.jcode.ui.markdown.MarkdownView;
 import com.zazhi.jcode.ui.records.ChatMessage;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 
 /**
  * Renders one chat message in the conversation list.
@@ -52,8 +52,7 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private final HBox wrapper = new HBox();
     private final VBox bubble = new VBox(6);
-//    private final Label roleLabel = new Label();
-    private final Label contentLabel = new Label();
+    private final MarkdownView contentView = new MarkdownView();
     private final Button copyButton = new Button("复制");
 
     public ChatMessageCell() {
@@ -79,10 +78,8 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
                 widthProperty().multiply(MAX_BUBBLE_WIDTH_RATIO)
         );
 
-
-        contentLabel.setWrapText(true);
-        contentLabel.setMinWidth(0);
-        contentLabel.setMaxWidth(Double.MAX_VALUE);
+        contentView.setMinWidth(0);
+        contentView.maxWidthProperty().bind(bubble.maxWidthProperty().subtract(8));
 
         copyButton.setFocusTraversable(false);
         copyButton.setStyle("""
@@ -97,7 +94,7 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
         HBox actions = new HBox(copyButton);
         actions.setAlignment(Pos.CENTER_RIGHT);
 
-        bubble.getChildren().setAll(contentLabel, actions);
+        bubble.getChildren().setAll(contentView, actions);
         wrapper.getChildren().setAll(bubble);
     }
 
@@ -110,87 +107,58 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
             return;
         }
 
-        contentLabel.setText(message.content() == null ? "" : message.content());
-        contentLabel.setAccessibleText(contentLabel.getText());
-
         MessageRole role = message.role() == null
                 ? MessageRole.ERROR
                 : message.role();
 
         Node graphic = switch (role) {
-            case USER -> createUserBubble();
-            case ASSISTANT -> createAssistantBubble();
-            case SYSTEM -> createSystemBubble();
-            case ERROR -> createErrorBubble();
+            case USER -> configureBubble(
+                    Pos.CENTER_RIGHT,
+                    Pos.CENTER_RIGHT,
+                    USER_BUBBLE_STYLE,
+                    Color.WHITE,
+                    "rgba(255, 255, 255, 0.82)"
+            );
+            case ASSISTANT -> configureBubble(
+                    Pos.CENTER_LEFT,
+                    Pos.CENTER_LEFT,
+                    ASSISTANT_BUBBLE_STYLE,
+                    Color.web("#202124"),
+                    "#5f6368"
+            );
+            case SYSTEM -> configureBubble(
+                    Pos.CENTER,
+                    Pos.CENTER_LEFT,
+                    SYSTEM_BUBBLE_STYLE,
+                    Color.web("#5f4b00"),
+                    "#806600"
+            );
+            case ERROR -> configureBubble(
+                    Pos.CENTER_LEFT,
+                    Pos.CENTER_LEFT,
+                    ERROR_BUBBLE_STYLE,
+                    Color.web("#8b1a1a"),
+                    "#a33a3a"
+            );
         };
 
+        contentView.setMarkdown(message.content() == null ? "" : message.content());
         setGraphic(graphic);
     }
 
-    private Node createUserBubble() {
-        configureBubble(
-                Pos.CENTER_RIGHT,
-                Pos.CENTER_RIGHT,
-                "你",
-                USER_BUBBLE_STYLE,
-                "white",
-                "rgba(255, 255, 255, 0.82)"
-        );
-        return wrapper;
-    }
-
-    private Node createAssistantBubble() {
-        configureBubble(
-                Pos.CENTER_LEFT,
-                Pos.CENTER_LEFT,
-                "JCode",
-                ASSISTANT_BUBBLE_STYLE,
-                "#202124",
-                "#5f6368"
-        );
-        return wrapper;
-    }
-
-    private Node createSystemBubble() {
-        configureBubble(
-                Pos.CENTER,
-                Pos.CENTER_LEFT,
-                "系统",
-                SYSTEM_BUBBLE_STYLE,
-                "#5f4b00",
-                "#806600"
-        );
-        return wrapper;
-    }
-
-    private Node createErrorBubble() {
-        configureBubble(
-                Pos.CENTER_LEFT,
-                Pos.CENTER_LEFT,
-                "错误",
-                ERROR_BUBBLE_STYLE,
-                "#8b1a1a",
-                "#a33a3a"
-        );
-        return wrapper;
-    }
-
-    private void configureBubble(
+    private Node configureBubble(
             Pos wrapperAlignment,
             Pos bubbleAlignment,
-            String roleText,
             String bubbleStyle,
-            String contentColor,
+            Color contentColor,
             String secondaryColor
     ) {
         wrapper.setAlignment(wrapperAlignment);
         bubble.setAlignment(bubbleAlignment);
         bubble.setStyle(bubbleStyle);
-
-//        roleLabel.setText(roleText);
-//        roleLabel.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
-        contentLabel.setTextFill(javafx.scene.paint.Color.web(contentColor));
-        copyButton.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
+        contentView.setTextColor(contentColor);
+        copyButton.setTextFill(Color.web(secondaryColor));
+        return wrapper;
     }
 
     private void copyCurrentMessage() {
@@ -205,8 +173,7 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
     }
 
     private void clearCell() {
-        contentLabel.setText("");
-//        roleLabel.setText("");
+        contentView.setMarkdown("");
         setText(null);
         setGraphic(null);
     }
