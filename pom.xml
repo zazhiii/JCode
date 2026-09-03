@@ -16,6 +16,8 @@
         <javafx.version>21</javafx.version>
         <fastjson2.version>2.0.60</fastjson2.version>
         <anthropic-java.version>2.54.0</anthropic-java.version>
+        <night-config.version>3.8.1</night-config.version>
+        <commonmark.version>0.24.0</commonmark.version>
     </properties>
 
     <dependencies>
@@ -38,6 +40,16 @@
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java</artifactId>
             <version>${anthropic-java.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.electronwill.night-config</groupId>
+            <artifactId>toml</artifactId>
+            <version>${night-config.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>${commonmark.version}</version>
         </dependency>
     </dependencies>
 
