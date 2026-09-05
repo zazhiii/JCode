@@ -4,16 +4,16 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.zazhi.jcode.ui.controller.MainController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.zazhi.jcode.ui.controller.MainController">
    <bottom>
-      <HBox alignment="CENTER" prefHeight="67.0" prefWidth="464.0" style="-fx-border-width: 1; -fx-border-color: black;" BorderPane.alignment="CENTER">
+      <HBox alignment="CENTER" fillHeight="false" prefHeight="93.0" prefWidth="600.0" style="-fx-border-width: 1; -fx-border-color: black;" BorderPane.alignment="CENTER">
          <children>
-            <TextField fx:id="inputTextField" prefHeight="25.0" prefWidth="255.0" />
+            <TextArea fx:id="inputTextArea" prefHeight="3.0" prefRowCount="15" prefWidth="200.0" promptText="给JCode发消息" wrapText="true" />
             <Button fx:id="sendButton" mnemonicParsing="false" prefHeight="27.0" prefWidth="54.0" text="发送" />
          </children>
       </HBox>

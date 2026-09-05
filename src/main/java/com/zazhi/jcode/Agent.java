@@ -2,19 +2,17 @@ package com.zazhi.jcode;
 
 import com.anthropic.client.AnthropicClient;
 import com.anthropic.client.okhttp.AnthropicOkHttpClient;
-import com.anthropic.core.JsonField;
 import com.anthropic.core.JsonValue;
 import com.anthropic.models.messages.*;
-import com.zazhi.jcode.tools.PowerShellExecutor;
+import com.zazhi.jcode.hooks.*;
+import com.zazhi.jcode.tools.PowerShellInput;
 import com.zazhi.jcode.tools.ToolDefinitions;
 import com.zazhi.jcode.tools.ToolDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author zazhi
@@ -25,12 +23,7 @@ public class Agent {
     List<MessageParam> history = new ArrayList<>();
     private static final int MAX_TOKENS = 8000;
 
-//    private static final Path WORKING_DIRECTORY = Path.of("")
-//            .toAbsolutePath()
-//            .normalize();
-
-        private static final Logger log =
-            LoggerFactory.getLogger(Agent.class);
+    private static final Logger log = LoggerFactory.getLogger(Agent.class);
 
     private static final Config CONFIG = new Config();
     private static final AnthropicClient CLIENT = AnthropicOkHttpClient.builder()
@@ -38,34 +31,13 @@ public class Agent {
             .baseUrl(stripTrailingSlash(CONFIG.getBaseUrl()))
             .build();
 
-    private static final String SHELL_NAME = "Windows cmd";
-
     private static final String SYSTEM = """
             You are a Java coding agent at %s. Use PowerShell to solve tasks. Act, don't explain."""
             .formatted(System.getProperty("user.dir"));
 
-    private static final Tool POWERSHELL_TOOL = Tool.builder()
-            .name("powershell")
-            .description("Run a PowerShell command.")
-            .inputSchema(
-                    Tool.InputSchema.builder()
-                            .type(JsonValue.from("object"))
-                            .properties(
-                                    Tool.InputSchema.Properties.builder()
-                                            .putAdditionalProperty(
-                                                    "command",
-                                                    JsonValue.from(
-                                                            Map.of("type", "string")
-                                                    )
-                                            )
-                                            .build()
-                            )
-                            .required(List.of("command"))
-                            .build()
-            )
-            .build();
-
     private static final List<ToolUnion> TOOLS = ToolDefinitions.ALL;
+
+    private static final Hooks HOOKS = new Hooks();
 
     public String query(String q) {
         history.add(
@@ -74,15 +46,22 @@ public class Agent {
                         .content(q)
                         .build()
         );
+
+        HOOKS.registerUserPromptSubmitHook(new ContextInjectHook());
+        HOOKS.registerPreToolUseHook(new PermissionHook());
+        HOOKS.registerPreToolUseHook(new LogHook());
+        HOOKS.registerPostToolUseHook(new LargeOutputHook());
+        HOOKS.registerStopHook(new SummaryHook());
+
+        HOOKS.triggerHooks(HooksEvent.USER_PROMPT_SUBMIT, q);
+
         log.info("User query: {}", q);
         agentLoop(history);
         MessageParam last = history.getLast();
-        // 从MessageParam中提取文本内容
         String resp = extractText(last);
-        log.info("Agent response: {}", resp);
+        log.info("Agent response: {}...", resp.substring(0, Math.min(100, resp.length())));
         return resp;
     }
-
 
     private void agentLoop(List<MessageParam> messages) {
         while (true) {
@@ -103,37 +82,65 @@ public class Agent {
                             .build()
             );
 
-
+            // 如果不是TOOL_USE（工具调用），说明模型已完成回答
             Boolean isToolUse = response.stopReason()
                     .map(StopReason.TOOL_USE::equals)
                     .orElse(false);
-            // 如果不是TOOL_USE（工具调用），说明模型已完成回答
             if (!isToolUse) {
+                String force = HOOKS.triggerHooks(HooksEvent.STOP, history);
+                // 如果有force返回，说明hook希望继续循环
+                if(force != null && !force.isEmpty()) {
+                    MessageParam.builder()
+                            .role(MessageParam.Role.USER)
+                            .content(force)
+                            .build();
+                    continue;
+                }
                 return;
             }
 
             // 执行每一个工具调用，收集结果
             List<ContentBlockParam> results = new ArrayList<>();
-            response.content().stream()
-                    .filter(ContentBlock::isToolUse)
-                    .forEach(contentBlock -> {
-                        ToolUseBlock toolUseBlock = contentBlock.asToolUse();
+            for (ContentBlock contentBlock : response.content()) {
+                if (!contentBlock.isToolUse()) continue;
 
-                        log.info("Executing tool: {} with input: {}", toolUseBlock.name(), toolUseBlock._input());
-                        ToolDispatcher.ToolExecution execute = ToolDispatcher.execute(toolUseBlock);
+                ToolUseBlock toolUseBlock = contentBlock.asToolUse();
 
-                        String output = execute.output();
-                        boolean isError = execute.error();
+                String blocked = HOOKS.triggerHooks(HooksEvent.PRE_TOOL_USE, toolUseBlock);
+                if(blocked != null && !blocked.isEmpty()) {
+                    ToolResultBlockParam toolResult =
+                            ToolResultBlockParam.builder()
+                                    .toolUseId(toolUseBlock.id())
+                                    .content(blocked)
+                                    .build();
+                    results.add(ContentBlockParam.ofToolResult(toolResult));
+                    continue;
+                }
+//                // 检查权限
+//                if (!checkPermission(toolUseBlock)) {
+//                    ToolResultBlockParam toolResult =
+//                            ToolResultBlockParam.builder()
+//                                    .toolUseId(toolUseBlock.id())
+//                                    .content("Permission denied.")
+//                                    .build();
+//                    results.add(ContentBlockParam.ofToolResult(toolResult));
+//                    continue;
+//                }
 
-                        ToolResultBlockParam toolResult =
-                                ToolResultBlockParam.builder()
-                                        .toolUseId(toolUseBlock.id())
-                                        .content(output)
-                                        .isError(isError)
-                                        .build();
+                log.info("Executing tool: {} with input: {}", toolUseBlock.name(), toolUseBlock._input());
+                ToolDispatcher.ToolExecution execute = ToolDispatcher.execute(toolUseBlock);
 
-                        results.add(ContentBlockParam.ofToolResult(toolResult));
-                    });
+                HOOKS.triggerHooks(HooksEvent.POST_TOOL_USE, toolUseBlock, execute.output());
+
+                ToolResultBlockParam toolResult =
+                        ToolResultBlockParam.builder()
+                                .toolUseId(toolUseBlock.id())
+                                .content(execute.output())
+                                .isError(execute.error())
+                                .build();
+                results.add(ContentBlockParam.ofToolResult(toolResult));
+            }
+
 
             // 将工具结果添加到消息中，loop继续
             messages.add(
@@ -145,11 +152,13 @@ public class Agent {
         }
     }
 
-    private static String stripTrailingSlash(String value) {
-        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
+    private static Boolean askUser(String name, JsonValue jsonValue, Boolean reason) {
+        // TODO
+        return null;
     }
 
-    private record PowerShellInput(String command) {
+    private static String stripTrailingSlash(String value) {
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 
     private static String extractText(MessageParam message) {

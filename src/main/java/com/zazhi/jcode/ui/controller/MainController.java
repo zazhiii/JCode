@@ -10,7 +10,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -25,13 +25,13 @@ public class MainController {
             FXCollections.observableArrayList();
 
     @FXML
-    private TextField inputTextField;
+    private TextArea inputTextArea;
 
     @FXML
     private Button sendButton;
 
     private final ExecutorService agentExecutor =
-        Executors.newSingleThreadExecutor();
+            Executors.newSingleThreadExecutor();
 
     private final Agent agent = new Agent();
 
@@ -51,46 +51,46 @@ public class MainController {
         chatListView.setCellFactory(listView -> new ChatMessageCell());
 
         sendButton.setOnAction(event -> sendMessage());
-        inputTextField.setOnAction(event -> sendMessage());
+//        inputTextArea.setOnAction(event -> sendMessage());
     }
 
     private void sendMessage() {
-    String input = inputTextField.getText().trim();
+        String input = inputTextArea.getText().trim();
 
-    if (input.isEmpty()) {
-        return;
-    }
+        if (input.isEmpty()) {
+            return;
+        }
 
-    messages.add(new ChatMessage(MessageRole.USER, input));
-    inputTextField.clear();
+        messages.add(new ChatMessage(MessageRole.USER, input));
+        inputTextArea.clear();
 //    setRunning(true);
 
-    CompletableFuture
-            .supplyAsync(() -> {
-                try {
-                    return agent.query(input);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }, agentExecutor)
-            .whenComplete((response, error) ->
-                    Platform.runLater(() -> {
-                        if (error != null) {
-                            messages.add(new ChatMessage(
-                                    MessageRole.ERROR,
-                                    error.getMessage()
-                            ));
-                        } else {
-                            messages.add(new ChatMessage(
-                                    MessageRole.ASSISTANT,
-                                    (String) response
-                            ));
-                        }
+        CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return agent.query(input);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }, agentExecutor)
+                .whenComplete((response, error) ->
+                                Platform.runLater(() -> {
+                                    if (error != null) {
+                                        messages.add(new ChatMessage(
+                                                MessageRole.ERROR,
+                                                error.getMessage()
+                                        ));
+                                    } else {
+                                        messages.add(new ChatMessage(
+                                                MessageRole.ASSISTANT,
+                                                (String) response
+                                        ));
+                                    }
 
 //                        setRunning(false);
-                        chatListView.scrollTo(messages.size() - 1);
-                    })
-            );
-}
+                                    chatListView.scrollTo(messages.size() - 1);
+                                })
+                );
+    }
 
 }
