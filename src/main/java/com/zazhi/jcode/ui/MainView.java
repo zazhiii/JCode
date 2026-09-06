@@ -16,6 +16,14 @@ public class MainView extends BorderPane {
     private TextArea inputTextArea;
     private Button sendButton;
     private ListView<ChatMessage> chatListView;
+    private Menu settingsMenu;
+    private MenuItem settingsMenuItem;
+    private MenuItem generalSettingsMenuItem;
+    private MenuItem modelSettingsMenuItem;
+
+    public MenuItem getModelSettingsMenuItem() {
+        return modelSettingsMenuItem;
+    }
 
     public MainView() {
         inputTextArea = new TextArea();
@@ -27,9 +35,12 @@ public class MainView extends BorderPane {
                 new CornerRadii(1), new BorderWidths(1))));
         bottomHBox.setAlignment(Pos.CENTER);
         setBottom(bottomHBox);
-//        setAlignment(bottomHBox, Pos.CENTER);
 
-        MenuBar menuBar = new MenuBar(new Menu("设置"));
+        settingsMenu = new Menu("设置");
+        generalSettingsMenuItem = new MenuItem("通用设置");
+        modelSettingsMenuItem = new MenuItem("模型设置");
+        settingsMenu.getItems().addAll(generalSettingsMenuItem, modelSettingsMenuItem);
+        MenuBar menuBar = new MenuBar(settingsMenu);
         setTop(menuBar);
 
         VBox leftVBox = new VBox();
@@ -58,5 +69,13 @@ public class MainView extends BorderPane {
 
     public ListView<ChatMessage> getChatListView() {
         return chatListView;
+    }
+
+    public Menu getSettingsMenu() {
+        return settingsMenu;
+    }
+
+    public MenuItem getGeneralSettingsMenuItem() {
+        return generalSettingsMenuItem;
     }
 }

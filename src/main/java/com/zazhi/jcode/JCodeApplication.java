@@ -5,12 +5,18 @@ import com.zazhi.jcode.ui.MainView;
 import com.zazhi.jcode.ui.chat.ChatMessageCell;
 import com.zazhi.jcode.ui.enums.MessageRole;
 import com.zazhi.jcode.ui.records.ChatMessage;
+import com.zazhi.jcode.ui.settings.GeneralSettingsView;
+import com.zazhi.jcode.ui.settings.ModelSettingsView;
+import com.zazhi.jcode.ui.settings.SettingsView;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
@@ -48,9 +54,23 @@ public class JCodeApplication extends Application {
                 event -> sendMessage(mainView.getInputTextArea(), mainView.getChatListView())
         );
 
-        stage.setScene(new Scene(mainView, 1200, 720));
+        Scene scene = new Scene(mainView, 1200, 720);
+
+        // 设置菜单跳转
+        setMenuItemOnAction(mainView.getGeneralSettingsMenuItem(), scene, new GeneralSettingsView());
+        setMenuItemOnAction(mainView.getModelSettingsMenuItem(), scene, new ModelSettingsView());
+
+        stage.setScene(scene);
         stage.setTitle("JCode");
         stage.show();
+    }
+
+    private void setMenuItemOnAction(MenuItem menuIteme, Scene scene, Parent root){
+        menuIteme.setOnAction(event -> navTo(scene, root));
+    }
+
+    private void navTo(Scene scene, Parent root) {
+        scene.setRoot(root);
     }
 
     private void sendMessage(TextArea inputTextArea, ListView<ChatMessage> chatListView) {
