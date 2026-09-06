@@ -39,6 +39,12 @@ public class Agent {
 
     private static final Hooks HOOKS = new Hooks();
 
+    private static final Agent INSTANCE = new Agent();
+
+    public static Agent getInstance() {
+        return INSTANCE;
+    }
+
     public String query(String q) {
         history.add(
                 MessageParam.builder()
@@ -150,11 +156,6 @@ public class Agent {
                             .build()
             );
         }
-    }
-
-    private static Boolean askUser(String name, JsonValue jsonValue, Boolean reason) {
-        // TODO
-        return null;
     }
 
     private static String stripTrailingSlash(String value) {

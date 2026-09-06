@@ -11,8 +11,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 
 /**
  * Renders one chat message in the conversation list.
@@ -23,36 +24,8 @@ import javafx.scene.layout.VBox;
 public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private static final double MAX_BUBBLE_WIDTH_RATIO = 0.75;
-
-    private static final String USER_BUBBLE_STYLE = """
-            -fx-background-color: #2f6feb;
-            -fx-background-radius: 12 12 2 12;
-            -fx-padding: 10 12 8 12;
-            """;
-
-    private static final String ASSISTANT_BUBBLE_STYLE = """
-            -fx-background-color: #f1f3f5;
-            -fx-background-radius: 12 12 12 2;
-            -fx-padding: 10 12 8 12;
-            """;
-
-    private static final String SYSTEM_BUBBLE_STYLE = """
-            -fx-background-color: #fff3cd;
-            -fx-background-radius: 8;
-            -fx-padding: 8 12 8 12;
-            """;
-
-    private static final String ERROR_BUBBLE_STYLE = """
-            -fx-background-color: #fde8e8;
-            -fx-background-radius: 8;
-            -fx-border-color: #e57373;
-            -fx-border-radius: 8;
-            -fx-padding: 8 12 8 12;
-            """;
-
     private final HBox wrapper = new HBox();
     private final VBox bubble = new VBox(6);
-//    private final Label roleLabel = new Label();
     private final Label contentLabel = new Label();
     private final Button copyButton = new Button("复制");
 
@@ -63,14 +36,15 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
     private void initialiseView() {
         setText(null);
 //        setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        setStyle("-fx-background-color: transparent; -fx-padding: 4 10 4 10;");
+        setBackground(new Background(new BackgroundFill(Paint.valueOf("transparent"), CornerRadii.EMPTY, Insets.EMPTY)));
+        setPadding(new Insets(4, 10, 4, 10));
 
         wrapper.setMaxWidth(Double.MAX_VALUE);
         wrapper.setPadding(Insets.EMPTY);
         // 容器的期望宽度绑定到单元格的宽度减去24
         wrapper.prefWidthProperty().bind(widthProperty().subtract(24));
 
-
+        // 左右填满
         bubble.setFillWidth(true);
         // 气泡宽度最多占75%的单元格宽度
         bubble.maxWidthProperty().bind(
@@ -129,69 +103,52 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
     }
 
     private Node createUserBubble() {
-        configureBubble(
-                Pos.CENTER_RIGHT,
-                Pos.CENTER_RIGHT,
-                "你",
-                USER_BUBBLE_STYLE,
-                "white",
-                "rgba(255, 255, 255, 0.82)"
-        );
+        // 内容在右侧
+        wrapper.setAlignment(Pos.CENTER_RIGHT);
+        bubble.setAlignment(Pos.CENTER_RIGHT);
+        // 设置气泡样式
+        contentLabel.setBackground(new Background(new BackgroundFill(Paint.valueOf("#2f6feb"),
+                new CornerRadii(12, 12, 2, 12, false), Insets.EMPTY)));
+        contentLabel.setPadding(new Insets(10, 12, 8, 12));
+        copyButton.setTextFill(Color.web("#5f6368"));
         return wrapper;
     }
 
     private Node createAssistantBubble() {
-        configureBubble(
-                Pos.CENTER_LEFT,
-                Pos.CENTER_LEFT,
-                "JCode",
-                ASSISTANT_BUBBLE_STYLE,
-                "#202124",
-                "#5f6368"
-        );
+        // 内容在左侧
+        wrapper.setAlignment(Pos.CENTER_LEFT);
+        bubble.setAlignment(Pos.CENTER_LEFT);
+        // 设置气泡样式
+        contentLabel.setBackground(new Background(new BackgroundFill(Paint.valueOf("#f1f3f5"),
+                new CornerRadii(12, 12, 12, 2, false), Insets.EMPTY)));
+        contentLabel.setPadding(new Insets(10, 12, 8, 12));
+        copyButton.setTextFill(Color.web("#5f6368"));
         return wrapper;
     }
 
     private Node createSystemBubble() {
-        configureBubble(
-                Pos.CENTER,
-                Pos.CENTER_LEFT,
-                "系统",
-                SYSTEM_BUBBLE_STYLE,
-                "#5f4b00",
-                "#806600"
-        );
+        // 内容在左侧
+        wrapper.setAlignment(Pos.CENTER);
+        bubble.setAlignment(Pos.CENTER_LEFT);
+        // 设置气泡样式
+        contentLabel.setBackground(new Background(new BackgroundFill(Paint.valueOf("#fff3cd"),
+                new CornerRadii(8), Insets.EMPTY)));
+        contentLabel.setPadding(new Insets(8, 12, 8, 12));
+        copyButton.setTextFill(Color.web("#5f6368"));
         return wrapper;
     }
 
     private Node createErrorBubble() {
-        configureBubble(
-                Pos.CENTER_LEFT,
-                Pos.CENTER_LEFT,
-                "错误",
-                ERROR_BUBBLE_STYLE,
-                "#8b1a1a",
-                "#a33a3a"
-        );
+        wrapper.setAlignment(Pos.CENTER_LEFT);
+        bubble.setAlignment(Pos.CENTER_LEFT);
+        // 设置气泡样式
+        contentLabel.setBackground(new Background(new BackgroundFill(Paint.valueOf("#8b1a1a"),
+                new CornerRadii(8), Insets.EMPTY)));
+        contentLabel.setPadding(new Insets(8, 12, 8, 12));
+        contentLabel.setBorder(new Border(new BorderStroke(Paint.valueOf("#e57373"), BorderStrokeStyle.SOLID,
+                new CornerRadii(8), new BorderWidths(1))));
+        copyButton.setTextFill(Color.web("#5f6368"));
         return wrapper;
-    }
-
-    private void configureBubble(
-            Pos wrapperAlignment,
-            Pos bubbleAlignment,
-            String roleText,
-            String bubbleStyle,
-            String contentColor,
-            String secondaryColor
-    ) {
-        wrapper.setAlignment(wrapperAlignment);
-        bubble.setAlignment(bubbleAlignment);
-        bubble.setStyle(bubbleStyle);
-
-//        roleLabel.setText(roleText);
-//        roleLabel.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
-        contentLabel.setTextFill(javafx.scene.paint.Color.web(contentColor));
-        copyButton.setTextFill(javafx.scene.paint.Color.web(secondaryColor));
     }
 
     private void copyCurrentMessage() {
@@ -207,7 +164,6 @@ public final class ChatMessageCell extends ListCell<ChatMessage> {
 
     private void clearCell() {
         contentLabel.setText("");
-//        roleLabel.setText("");
         setText(null);
         setGraphic(null);
     }
