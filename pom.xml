@@ -11,6 +11,7 @@
     <modules>
         <module>jcode-core</module>
         <module>jcode-gui</module>
+        <module>jcode-cli</module>
     </modules>
 
     <properties>
