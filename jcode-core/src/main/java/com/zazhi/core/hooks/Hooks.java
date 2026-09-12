@@ -30,7 +30,7 @@ public class Hooks {
     }
 
     public String triggerHooks(HooksEvent event, Object... args) {
-        List<HooksCallback> eventCallbacks = callbacks.get(event);
+        List<HooksCallback> eventCallbacks = callbacks.getOrDefault(event, List.of());
         for (HooksCallback callback : eventCallbacks) {
             String result = switch (event) {
                 case USER_PROMPT_SUBMIT:

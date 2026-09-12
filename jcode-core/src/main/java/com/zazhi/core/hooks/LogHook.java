@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
  * @description:
  */
 public class LogHook implements PreToolUseHookCallback{
+    private static final Logger log = LoggerFactory.getLogger(LogHook.class);
 
     @Override
     public String onPreToolUse(ToolUseBlock block) {
-        String argsPreview = block._input().asString().toString().substring(0, Math.min(100, block._input().asString().toString().length()));
-        System.out.printf("\033[90m[HOOK] %s(%s)\033[0m%n", block.name(), argsPreview);
+        String input = block._input().toString();
+        String argsPreview = input.substring(0, Math.min(100, input.length()));
+        log.debug("{}({})", block.name(), argsPreview);
         return "";
     }
 }

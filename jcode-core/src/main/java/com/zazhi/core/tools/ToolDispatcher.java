@@ -9,25 +9,29 @@ import com.anthropic.models.messages.ToolUseBlock;
  */
 
 public final class ToolDispatcher {
+    private final WorkspaceTools workspaceTools;
+    private final PowerShellExecutor powerShellExecutor;
 
-    private ToolDispatcher() {
+    public ToolDispatcher(java.nio.file.Path workspace) {
+        this.workspaceTools = new WorkspaceTools(workspace);
+        this.powerShellExecutor = new PowerShellExecutor(workspace);
     }
 
-    public static ToolExecution execute(ToolUseBlock toolUse) {
+    public ToolExecution execute(ToolUseBlock toolUse) {
         try {
             String output = switch (toolUse.name()) {
                 case "powershell" -> {
                     PowerShellInput input = toolUse._input()
                             .convert(PowerShellInput.class);
 
-                    yield PowerShellExecutor.runPowerShell(input.command());
+                    yield powerShellExecutor.runPowerShell(input.command());
                 }
 
                 case "read_file" -> {
                     ReadFileInput input = toolUse._input()
                             .convert(ReadFileInput.class);
 
-                    yield WorkspaceTools.readFile(
+                    yield workspaceTools.readFile(
                             input.path(),
                             input.limit()
                     );
@@ -37,7 +41,7 @@ public final class ToolDispatcher {
                     WriteFileInput input = toolUse._input()
                             .convert(WriteFileInput.class);
 
-                    yield WorkspaceTools.writeFile(
+                    yield workspaceTools.writeFile(
                             input.path(),
                             input.content()
                     );
@@ -47,7 +51,7 @@ public final class ToolDispatcher {
                     EditFileInput input = toolUse._input()
                             .convert(EditFileInput.class);
 
-                    yield WorkspaceTools.editFile(
+                    yield workspaceTools.editFile(
                             input.path(),
                             input.old_text(),
                             input.new_text()
@@ -58,7 +62,7 @@ public final class ToolDispatcher {
                     GlobInput input = toolUse._input()
                             .convert(GlobInput.class);
 
-                    yield WorkspaceTools.glob(input.pattern());
+                    yield workspaceTools.glob(input.pattern());
                 }
 
                 default -> "Error: Unknown tool: " + toolUse.name();

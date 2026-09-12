@@ -1,6 +1,8 @@
 package com.zazhi.core.hooks;
 
 import com.anthropic.models.messages.MessageParam;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -10,6 +12,8 @@ import java.util.List;
  * @description:
  */
 public class SummaryHook implements StopCallback {
+    private static final Logger log = LoggerFactory.getLogger(SummaryHook.class);
+
     @Override
     public void onStop(List<MessageParam> messages) {
         long toolCount = messages.stream()
@@ -23,9 +27,6 @@ public class SummaryHook implements StopCallback {
                 .filter(block -> block.toolResult().isPresent())
                 .count();
 
-        System.out.printf(
-                "\033[90m[HOOK] Stop: session used %d tool calls\033[0m%n",
-                toolCount
-        );
+        log.debug("Stop: session used {} tool calls", toolCount);
     }
 }

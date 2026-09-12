@@ -11,28 +11,32 @@ import java.util.stream.Stream;
  * @date 2026/8/24
  * @description:
  */
-public class WorkspaceTools {
+public final class WorkspaceTools {
 
-    // System.getProperty("user.dir")返回的是执行运行Java程序命令的路径。
-    private static final Path WORKDIR = Path.of(
-            System.getProperty("user.dir")
-    ).toAbsolutePath().normalize();
+    private final Path workdir;
 
     private static final int MAX_OUTPUT_LENGTH = 50_000;
 
-    private WorkspaceTools() {
+    public WorkspaceTools(Path workdir) {
+        if (workdir == null) {
+            throw new IllegalArgumentException("Workspace is null");
+        }
+        this.workdir = workdir.toAbsolutePath().normalize();
+        if (!Files.isDirectory(this.workdir)) {
+            throw new IllegalArgumentException("Workspace is not a directory: " + this.workdir);
+        }
     }
 
-    private static Path safePath(String path) {
+    private Path safePath(String path) {
         if (path == null || path.isBlank()) {
             throw new IllegalArgumentException("Path is empty");
         }
 
-        Path resolved = WORKDIR.resolve(path)
+        Path resolved = workdir.resolve(path)
                 .toAbsolutePath()
                 .normalize();
 
-        if (!resolved.startsWith(WORKDIR)) {
+        if (!resolved.startsWith(workdir)) {
             throw new IllegalArgumentException(
                     "Path escapes workspace: " + path
             );
@@ -41,7 +45,7 @@ public class WorkspaceTools {
         return resolved;
     }
 
-    public static String readFile(String path, Integer limit) {
+    public String readFile(String path, Integer limit) {
         try {
             List<String> lines = Files.readAllLines(
                     safePath(path),
@@ -61,7 +65,7 @@ public class WorkspaceTools {
         }
     }
 
-    public static String writeFile(String path, String content) {
+    public String writeFile(String path, String content) {
         try {
             if (content == null) {
                 return "Error: Content is null";
@@ -88,7 +92,7 @@ public class WorkspaceTools {
         }
     }
 
-    public static String editFile(
+    public String editFile(
             String path,
             String oldText,
             String newText
@@ -121,7 +125,7 @@ public class WorkspaceTools {
         }
     }
 
-    public static String glob(String pattern) {
+    public String glob(String pattern) {
         try {
             if (pattern == null || pattern.isBlank()) {
                 return "Error: Glob pattern is empty";
@@ -130,10 +134,10 @@ public class WorkspaceTools {
             PathMatcher matcher = FileSystems.getDefault()
                     .getPathMatcher("glob:" + pattern);
 
-            try (Stream<Path> paths = Files.walk(WORKDIR)) {
+            try (Stream<Path> paths = Files.walk(workdir)) {
                 String result = paths
                         .filter(Files::isRegularFile)
-                        .map(WORKDIR::relativize)
+                        .map(workdir::relativize)
                         .filter(matcher::matches)
                         .map(Path::toString)
                         .sorted()

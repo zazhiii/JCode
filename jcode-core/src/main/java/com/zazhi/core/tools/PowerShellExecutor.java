@@ -3,6 +3,8 @@ package com.zazhi.core.tools;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.*;
@@ -28,13 +30,19 @@ public final class PowerShellExecutor {
         "format c:"
     );
 
-    private PowerShellExecutor() {
+    private final Path workdir;
+
+    public PowerShellExecutor(Path workdir) {
+        this.workdir = workdir.toAbsolutePath().normalize();
+        if (!Files.isDirectory(this.workdir)) {
+            throw new IllegalArgumentException("Workspace is not a directory: " + this.workdir);
+        }
     }
 
     /**
      * 在当前工作目录运行 PowerShell 命令。
      */
-    public static String runPowerShell(String command) {
+    public String runPowerShell(String command) {
         if (command == null || command.isBlank()) {
             return "Error: Command is empty";
         }
@@ -57,8 +65,7 @@ public final class PowerShellExecutor {
             );
 
             // 等价于 Python 中的 cwd=os.getcwd()
-            File workingDirectory =
-                new File(System.getProperty("user.dir"));
+            File workingDirectory = workdir.toFile();
 
             processBuilder.directory(workingDirectory);
 
@@ -162,16 +169,4 @@ public final class PowerShellExecutor {
         processHandle.destroyForcibly();
     }
 
-    public static void main(String[] args) {
-        String command;
-
-        if (args.length == 0) {
-            command = "Get-ChildItem | Select-Object Name, Length";
-        } else {
-            command = String.join(" ", args);
-        }
-
-        String result = runPowerShell(command);
-        System.out.println(result);
-    }
 }
