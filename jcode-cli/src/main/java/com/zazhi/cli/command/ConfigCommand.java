@@ -35,7 +35,7 @@ public final class ConfigCommand implements Callable<Integer> {
             System.out.println("workspace = " + command.parent.workspace());
             System.out.println("llm.base_url = " + value(config.getBaseUrl()));
             System.out.println("llm.model_id = " + value(config.getModelId()));
-            System.out.println("llm.api_key = " + (blank(config.getApiKey()) ? "(未配置)" : "(已配置)"));
+            System.out.println("llm.api_key = " + (blank(config.getApiKey()) ? "( ✗未配置 )" : "( ✓已配置 )"));
             return 0;
         }
     }

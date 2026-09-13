@@ -24,7 +24,9 @@ public final class ChatCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
+        try (Terminal terminal = TerminalBuilder.builder()
+                        .system(true)
+                        .build()) {
             Path stateDirectory = Path.of(System.getProperty("user.home"), ".jcode");
             Files.createDirectories(stateDirectory);
             LineReader reader = LineReaderBuilder.builder()
