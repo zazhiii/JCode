@@ -59,6 +59,8 @@ public final class AgentSession {
             throw new IllegalArgumentException("Prompt is empty");
         }
         cancelled = false;
+
+        // 追加用户提交的prompt
         history.add(MessageParam.builder()
                 .role(MessageParam.Role.USER)
                 .content(prompt)
@@ -87,6 +89,7 @@ public final class AgentSession {
     private String runLoop() {
         for (int step = 0; step < MAX_STEPS; step++) {
             checkCancelled();
+            // 调用LLM
             Message response = client.messages().create(
                     MessageCreateParams.builder()
                             .model(config.getModelId())
@@ -96,12 +99,12 @@ public final class AgentSession {
                             .maxTokens(MAX_TOKENS)
                             .build()
             );
-
+            // 追加LLM回应的消息
             history.add(MessageParam.builder()
                     .role(MessageParam.Role.ASSISTANT)
                     .content(response.toParam().content())
                     .build());
-
+            // 判断停止原因是否为工具调用。是，则调用工具追加所有工具的结果；若不是，则提取最后LLM返回的消息。
             boolean usesTool = response.stopReason().map(StopReason.TOOL_USE::equals).orElse(false);
             if (!usesTool) {
                 String result = extractText(history.getLast());

@@ -1,7 +1,7 @@
 package com.zazhi.core.permission;
 
 import com.anthropic.models.messages.ToolUseBlock;
-import com.zazhi.core.tools.PowerShellInput;
+import com.zazhi.core.tools.ToolDispatcher;
 
 import java.util.List;
 import java.util.Locale;
@@ -38,9 +38,9 @@ public final class ToolPermissionPolicy {
         return Optional.empty();
     }
 
-    private record WriteFileInput(String path, String content) {
-    }
+    private record WriteFileInput(String path, String content) {}
 
-    private record EditFileInput(String path, String old_text, String new_text) {
-    }
+    private record EditFileInput(String path, String old_text, String new_text) {}
+
+    private record PowerShellInput(String command) {}
 }
