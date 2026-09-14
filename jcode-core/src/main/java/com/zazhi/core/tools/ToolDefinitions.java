@@ -54,9 +54,9 @@ public final class ToolDefinitions {
                 .build();
     }
 
-    public static final Tool POWERSHELL = createTool(
-            "powershell",
-            "Run a PowerShell command in the workspace.",
+    public static final Tool SHELL = createTool(
+            "shell",
+            "Run a command in the workspace using the operating system shell.",
             Map.of("command", stringProperty()),
             List.of("command")
     );
@@ -100,7 +100,7 @@ public final class ToolDefinitions {
     );
 
     public static final List<ToolUnion> ALL = List.of(
-            ToolUnion.ofTool(POWERSHELL),
+            ToolUnion.ofTool(SHELL),
             ToolUnion.ofTool(READ_FILE),
             ToolUnion.ofTool(WRITE_FILE),
             ToolUnion.ofTool(EDIT_FILE),

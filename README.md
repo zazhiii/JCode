@@ -17,7 +17,7 @@ JCode
 
 - JDK 21+
 - Maven 3.6+
-- Windows PowerShell
+- Windows 10/11（PowerShell）或 macOS（系统自带 `/bin/zsh`）
 - Anthropic Messages API 或兼容接口
 
 ## 配置
@@ -28,12 +28,20 @@ JCode
 2. 工作区 `.jcode/config.properties`
 3. 用户目录 `~/.jcode/config.properties`
 
-环境变量：
+Windows PowerShell 环境变量：
 
 ```powershell
 $env:LLM_BASE_URL = "https://api.deepseek.com/anthropic"
 $env:LLM_API_KEY = "sk-xxx"
 $env:LLM_MODEL_ID = "deepseek-v4-flash"
+```
+
+macOS zsh 环境变量：
+
+```bash
+export LLM_BASE_URL="https://api.deepseek.com/anthropic"
+export LLM_API_KEY="sk-xxx"
+export LLM_MODEL_ID="deepseek-v4-flash"
 ```
 
 配置文件格式：
@@ -48,31 +56,33 @@ llm.model_id = deepseek-v4-flash
 
 ## CLI
 
-构建可执行 jar：
+构建可执行 JAR（Windows PowerShell 和 macOS zsh 均适用）：
 
-```powershell
+```shell
 mvn clean package
 ```
 
-查看帮助和检查配置：
+Windows PowerShell：
 
 ```powershell
 java -jar jcode-cli\target\jcode-cli.jar --help
 java -jar jcode-cli\target\jcode-cli.jar config doctor
-```
-
-执行一次任务：
-
-```powershell
 java -jar jcode-cli\target\jcode-cli.jar ask "分析项目并修复编译错误"
 java -jar jcode-cli\target\jcode-cli.jar ask -C E:\code_java\Demo "补充单元测试"
-```
-
-启动交互式会话：
-
-```powershell
 java -jar jcode-cli\target\jcode-cli.jar chat
 ```
+
+macOS zsh：
+
+```bash
+java -jar jcode-cli/target/jcode-cli.jar --help
+java -jar jcode-cli/target/jcode-cli.jar config doctor
+java -jar jcode-cli/target/jcode-cli.jar ask "分析项目并修复编译错误"
+java -jar jcode-cli/target/jcode-cli.jar ask -C ~/code/Demo "补充单元测试"
+java -jar jcode-cli/target/jcode-cli.jar chat
+```
+
+Agent 的 `shell` 工具会根据运行平台自动选择 Windows PowerShell 或 macOS `/bin/zsh`。
 
 交互命令：
 
@@ -101,15 +111,15 @@ GUI 和 CLI 使用同一个 `AgentEngine` / `AgentSession`。文件修改和潜�
 ## 安全边界
 
 - 文件工具只能访问指定工作区。
-- 危险 PowerShell 命令仍会在执行器中被阻止。
+- Windows PowerShell 和 macOS zsh 中的高风险命令会要求确认，灾难性命令会被执行器阻止。
 - `ASK` 模式在修改文件或运行潜在破坏性命令前询问。
 - `ACCEPT_EDITS` 自动允许工作区文件编辑，但仍询问破坏性命令。
 - `DENY` 拒绝所有需要授权的操作。
 
 ## 测试
 
-```powershell
+```shell
 mvn test
 ```
 
-当前测试覆盖配置校验、工作区读写和路径越界防护。
+当前测试覆盖配置校验、工作区读写、路径越界防护，以及跨平台 shell 选择、执行和安全规则。

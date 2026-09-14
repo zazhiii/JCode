@@ -11,19 +11,23 @@ import java.nio.file.Path;
  */
 public final class ToolDispatcher {
     private final WorkspaceTools workspaceTools;
-    private final PowerShellExecutor powerShellExecutor;
+    private final ShellExecutor shellExecutor;
 
     public ToolDispatcher(Path workspace) {
+        this(workspace, new ShellExecutor(workspace));
+    }
+
+    ToolDispatcher(Path workspace, ShellExecutor shellExecutor) {
         this.workspaceTools = new WorkspaceTools(workspace);
-        this.powerShellExecutor = new PowerShellExecutor(workspace);
+        this.shellExecutor = shellExecutor;
     }
 
     public ToolExecution execute(ToolUseBlock toolUse) {
         try {
             String output = switch (toolUse.name()) {
-                case "powershell" -> {
-                    PowerShellInput input = toolUse._input().convert(PowerShellInput.class);
-                    yield powerShellExecutor.runPowerShell(input.command());
+                case "shell" -> {
+                    ShellInput input = toolUse._input().convert(ShellInput.class);
+                    yield shellExecutor.run(input.command());
                 }
                 case "read_file" -> {
                     ReadFileInput input = toolUse._input().convert(ReadFileInput.class);
@@ -51,7 +55,7 @@ public final class ToolDispatcher {
 
     public record ToolExecution(String output, boolean error) {}
 
-    private record PowerShellInput(String command) {}
+    private record ShellInput(String command) {}
 
     private record ReadFileInput(String path, Integer limit) {}
 

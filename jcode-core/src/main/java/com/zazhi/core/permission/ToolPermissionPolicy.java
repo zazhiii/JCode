@@ -1,8 +1,6 @@
 package com.zazhi.core.permission;
 
 import com.anthropic.models.messages.ToolUseBlock;
-import com.zazhi.core.tools.ToolDispatcher;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -10,7 +8,10 @@ import java.util.Optional;
 public final class ToolPermissionPolicy {
     private static final List<String> DESTRUCTIVE_COMMANDS = List.of(
             "remove-item", "rm ", "del ", "erase ", "set-content",
-            "clear-content", "move-item", "rename-item", "icacls"
+            "clear-content", "move-item", "rename-item", "icacls",
+            "mv ", "rmdir ", "unlink ", "chmod ", "chown ",
+            "diskutil erase", "diskutil partition",
+            "shutdown", "reboot", "halt", " >", "> "
     );
 
     private ToolPermissionPolicy() {
@@ -27,8 +28,8 @@ public final class ToolPermissionPolicy {
             return Optional.of(new PermissionRequest(
                     toolUse.name(), edit.path(), PermissionRequest.Risk.EDIT, "工具将编辑工作区文件"));
         }
-        if (toolUse.name().equals("powershell")) {
-            String command = toolUse._input().convert(PowerShellInput.class).command();
+        if (toolUse.name().equals("shell")) {
+            String command = toolUse._input().convert(ShellInput.class).command();
             String normalized = command.toLowerCase(Locale.ROOT);
             if (DESTRUCTIVE_COMMANDS.stream().anyMatch(normalized::contains)) {
                 return Optional.of(new PermissionRequest(
@@ -42,5 +43,5 @@ public final class ToolPermissionPolicy {
 
     private record EditFileInput(String path, String old_text, String new_text) {}
 
-    private record PowerShellInput(String command) {}
+    private record ShellInput(String command) {}
 }

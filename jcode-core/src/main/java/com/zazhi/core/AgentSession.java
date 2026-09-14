@@ -16,6 +16,7 @@ import com.zazhi.core.permission.PermissionRequest;
 import com.zazhi.core.permission.ToolPermissionPolicy;
 import com.zazhi.core.tools.ToolDefinitions;
 import com.zazhi.core.tools.ToolDispatcher;
+import com.zazhi.core.tools.ShellExecutor;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -49,9 +50,12 @@ public final class AgentSession {
         this.permissionHandler = permissionHandler;
         this.listener = listener;
         this.toolDispatcher = new ToolDispatcher(normalizedWorkspace);
+        ShellExecutor.Platform platform = ShellExecutor.Platform.detect(System.getProperty("os.name"));
         this.systemPrompt = """
                 You are a Java coding agent working at %s. Use the available tools to solve tasks.
-                Act on the user's request and report the result concisely.""".formatted(normalizedWorkspace);
+                Shell commands run with %s. Generate commands that are valid for that shell.
+                Act on the user's request and report the result concisely."""
+                .formatted(normalizedWorkspace, platform.displayName());
     }
 
     public synchronized String submit(String prompt) {
