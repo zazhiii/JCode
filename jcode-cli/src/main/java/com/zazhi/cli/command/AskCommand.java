@@ -3,8 +3,8 @@ package com.zazhi.cli.command;
 import com.zazhi.cli.JCodeCommand;
 import com.zazhi.cli.terminal.CliPermissionHandler;
 import com.zazhi.cli.terminal.TerminalRenderer;
+import com.zazhi.core.Agent;
 import com.zazhi.core.AgentListener;
-import com.zazhi.core.AgentSession;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -31,18 +31,19 @@ public final class AskCommand implements Callable<Integer> {
 
     @Override
     public Integer call() {
+//        parent.ensureConfigured(!json);
         PrintWriter out = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
         PrintWriter err = new PrintWriter(System.err, true, StandardCharsets.UTF_8);
         TerminalRenderer renderer = new TerminalRenderer(err, parent.colorEnabled());
         AgentListener listener = json ? AgentListener.noop() : renderer;
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
 
-        AgentSession session = parent.engine().createSession(
+        Agent agent = Agent.cteate(
                 parent.workspace(),
                 new CliPermissionHandler(parent.permissionMode(), value -> readLine(input, err, value), err),
                 listener
         );
-        String response = session.submit(String.join(" ", prompt));
+        String response = agent.submit(String.join(" ", prompt));
         if (json) {
             out.println("{\"status\":\"ok\",\"response\":\"" + escapeJson(response) + "\"}");
         } else {

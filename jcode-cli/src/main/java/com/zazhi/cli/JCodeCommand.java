@@ -3,8 +3,9 @@ package com.zazhi.cli;
 import com.zazhi.cli.command.AskCommand;
 import com.zazhi.cli.command.ChatCommand;
 import com.zazhi.cli.command.ConfigCommand;
-import com.zazhi.core.AgentEngine;
-import com.zazhi.core.Config;
+import com.zazhi.core.Agent;
+import com.zazhi.core.ConfigStore;
+import com.zazhi.core.permission.PermissionHandler;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ScopeType;
@@ -48,13 +49,26 @@ public final class JCodeCommand implements Callable<Integer> {
         return workspace;
     }
 
-    public Config config() {
-        return Config.load(workspace()).withModelId(model);
+    public ConfigStore.Config config() {
+        return new ConfigStore().load(workspace());
     }
 
-    public AgentEngine engine() {
-        return new AgentEngine(config());
-    }
+
+//    public void ensureConfigured(boolean interactive) {
+//        var errors = config().validate();
+//        if (errors.isEmpty()) return;
+//        if (interactive && System.console() != null && errors.stream().allMatch(error -> error.startsWith("缺少 "))) {
+//            ConfigCommand.runInit(this, _ConfigStore.Scope.user);
+//            config().requireValid();
+//            return;
+//        }
+//        throw new IllegalStateException("LLM 配置缺失或无效: " + String.join("; ", errors)
+//                + "。运行 jcode config init，或设置 LLM_BASE_URL、LLM_API_KEY、LLM_MODEL_ID。");
+//    }
+
+//    public Agent createAgent(Path workspace, PermissionHandler handler, ) {
+//        return Agent.cteate(workspace, handler, );
+//    }
 
     public PermissionMode permissionMode() {
         return permissionMode;

@@ -1,10 +1,8 @@
 package com.zazhi.gui;
 
 
-import com.zazhi.core.AgentEngine;
+import com.zazhi.core.Agent;
 import com.zazhi.core.AgentListener;
-import com.zazhi.core.AgentSession;
-import com.zazhi.core.Config;
 import com.zazhi.core.permission.PermissionDecision;
 import com.zazhi.core.permission.PermissionRequest;
 import com.zazhi.gui.ui.MainView;
@@ -17,7 +15,6 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.ListView;
@@ -38,14 +35,14 @@ import java.nio.file.Path;
  * @description:
  */
 public class JCodeApplication extends Application {
-    private AgentSession agent;
+    private Agent agent;
     private final ObservableList<ChatMessage> messages = FXCollections.observableArrayList();
     private final ExecutorService agentExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     public void start(Stage stage) {
         Path workspace = Path.of(System.getProperty("user.dir"));
-        agent = new AgentEngine(Config.load(workspace)).createSession(
+        agent = Agent.cteate(
                 workspace, this::requestPermission, AgentListener.noop());
         MainView mainView = new MainView();
 

@@ -52,6 +52,21 @@ llm.api_key = sk-xxx
 llm.model_id = deepseek-v4-flash
 ```
 
+也可以通过命令行配置。`init` 会在交互终端中隐藏 API Key 输入，默认写入用户配置文件：
+
+```shell
+jcode config init
+jcode config init --scope project
+jcode config set llm.model_id deepseek-v4-flash
+jcode config set --scope project llm.base_url https://api.deepseek.com/anthropic
+printf '%s\n' "$LLM_API_KEY" | jcode config set llm.api_key --stdin
+jcode config show
+jcode config doctor
+jcode config unset llm.model_id
+```
+
+`--scope project` 将配置写到当前工作区的 `.jcode/config.properties`；默认写到用户目录。`config show` 显示生效来源，但不会输出 API Key 明文。`ask` 和 `chat` 首次运行缺少配置时会在交互终端启动向导；非交互环境应使用环境变量或配置文件。
+
 真实配置不会从 `src/main/resources/config.properties` 打包进 jar。
 
 ## CLI

@@ -1,35 +1,27 @@
 package com.zazhi.core;
 
 import com.anthropic.client.AnthropicClient;
-import com.anthropic.models.messages.ContentBlock;
-import com.anthropic.models.messages.ContentBlockParam;
-import com.anthropic.models.messages.Message;
-import com.anthropic.models.messages.MessageCreateParams;
-import com.anthropic.models.messages.MessageParam;
-import com.anthropic.models.messages.StopReason;
-import com.anthropic.models.messages.ToolResultBlockParam;
-import com.anthropic.models.messages.ToolUnion;
-import com.anthropic.models.messages.ToolUseBlock;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
+import com.anthropic.models.messages.*;
 import com.zazhi.core.permission.PermissionDecision;
 import com.zazhi.core.permission.PermissionHandler;
 import com.zazhi.core.permission.PermissionRequest;
 import com.zazhi.core.permission.ToolPermissionPolicy;
+import com.zazhi.core.tools.ShellExecutor;
 import com.zazhi.core.tools.ToolDefinitions;
 import com.zazhi.core.tools.ToolDispatcher;
-import com.zazhi.core.tools.ShellExecutor;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CancellationException;
 
-public final class AgentSession {
+public final class Agent {
     private static final int MAX_TOKENS = 8_000;
     private static final int MAX_STEPS = 100;
     private static final List<ToolUnion> TOOLS = ToolDefinitions.ALL;
 
-    private final AnthropicClient client;
-    private final Config config;
     private final PermissionHandler permissionHandler;
     private final AgentListener listener;
     private final ToolDispatcher toolDispatcher;
@@ -37,28 +29,34 @@ public final class AgentSession {
     private final String systemPrompt;
     private volatile boolean cancelled;
 
-    AgentSession(
-            AnthropicClient client,
-            Config config,
-            Path workspace,
-            PermissionHandler permissionHandler,
-            AgentListener listener
-    ) {
-        Path normalizedWorkspace = workspace.toAbsolutePath().normalize();
-        this.client = client;
-        this.config = config;
+    private final ConfigStore.Config config;
+    private final AnthropicClient client;
+
+    private Agent(Path workspace, PermissionHandler permissionHandler, AgentListener listener) {
+        workspace = workspace.toAbsolutePath().normalize();
+
+        this.config = new ConfigStore().load(workspace);
+        this.client = AnthropicOkHttpClient.builder()
+                .apiKey(config.apiKey())
+                .baseUrl(stripTrailingSlash(config.baseUrl()))
+                .build();
+
         this.permissionHandler = permissionHandler;
         this.listener = listener;
-        this.toolDispatcher = new ToolDispatcher(normalizedWorkspace);
+        this.toolDispatcher = new ToolDispatcher(workspace);
         ShellExecutor.Platform platform = ShellExecutor.Platform.detect(System.getProperty("os.name"));
         this.systemPrompt = """
                 You are a Java coding agent working at %s. Use the available tools to solve tasks.
                 Shell commands run with %s. Generate commands that are valid for that shell.
                 Act on the user's request and report the result concisely."""
-                .formatted(normalizedWorkspace, platform.displayName());
+                .formatted(workspace, platform.displayName());
     }
 
-    public synchronized String submit(String prompt) {
+    public static Agent cteate(Path workspace, PermissionHandler permissionHandler, AgentListener listener) {
+        return new Agent(workspace, permissionHandler, listener);
+    }
+
+        public synchronized String submit(String prompt) {
         if (prompt == null || prompt.isBlank()) {
             throw new IllegalArgumentException("Prompt is empty");
         }
@@ -78,6 +76,7 @@ public final class AgentSession {
         }
     }
 
+
     public void cancel() {
         cancelled = true;
     }
@@ -96,7 +95,7 @@ public final class AgentSession {
             // 调用LLM
             Message response = client.messages().create(
                     MessageCreateParams.builder()
-                            .model(config.getModelId())
+                            .model(config.modelId())
                             .system(systemPrompt)
                             .messages(history)
                             .tools(TOOLS)
@@ -173,5 +172,9 @@ public final class AgentSession {
                     .reduce("", String::concat);
         }
         return "";
+    }
+
+    private static String stripTrailingSlash(String value) {
+        return value.endsWith("/") ? value.substring(0, value.length() - 1) : value;
     }
 }

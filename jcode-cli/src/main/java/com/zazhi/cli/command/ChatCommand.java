@@ -3,7 +3,7 @@ package com.zazhi.cli.command;
 import com.zazhi.cli.JCodeCommand;
 import com.zazhi.cli.terminal.CliPermissionHandler;
 import com.zazhi.cli.terminal.TerminalRenderer;
-import com.zazhi.core.AgentSession;
+import com.zazhi.core.Agent;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
@@ -24,6 +24,7 @@ public final class ChatCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
+//        parent.ensureConfigured(true);
         try (Terminal terminal = TerminalBuilder.builder()
                         .system(true)
                         .build()) {
@@ -38,14 +39,14 @@ public final class ChatCommand implements Callable<Integer> {
                     .build();
 
             TerminalRenderer renderer = new TerminalRenderer(terminal.writer(), parent.colorEnabled());
-            AgentSession session = parent.engine().createSession(
+            Agent agent = Agent.cteate(
                     parent.workspace(),
                     new CliPermissionHandler(parent.permissionMode(), reader::readLine, terminal.writer()),
                     renderer
             );
 
             renderer.heading("JCode · " + parent.workspace());
-            terminal.writer().println("Model: " + parent.config().getModelId());
+            terminal.writer().println("Model: " + parent.config().modelId());
             terminal.writer().println("输入 /help 查看命令，Ctrl+D 退出。\n");
             terminal.writer().flush();
 
@@ -59,19 +60,19 @@ public final class ChatCommand implements Callable<Integer> {
                         continue;
                     }
                     if (line.equals("/clear") || line.equals("/new")) {
-                        session.clear();
+                        agent.clear();
                         terminal.writer().println("已开始新会话。\n");
                         continue;
                     }
                     if (line.equals("/model")) {
-                        terminal.writer().println(parent.config().getModelId());
+                        terminal.writer().println(parent.config().modelId());
                         continue;
                     }
                     if (line.equals("/workspace")) {
                         terminal.writer().println(parent.workspace());
                         continue;
                     }
-                    String response = session.submit(line);
+                    String response = agent.submit(line);
                     terminal.writer().println("\nJCode > " + response + "\n");
                     terminal.writer().flush();
                 } catch (UserInterruptException ignored) {
